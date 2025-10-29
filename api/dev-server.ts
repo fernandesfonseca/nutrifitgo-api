@@ -1,63 +1,54 @@
-import { createServer } from 'http';
-import { URL, fileURLToPath } from 'url';
-import { readFile } from 'fs/promises';
-import { join, extname } from 'path';
+import 'dotenv/config';
+import http from 'node:http';
+import url from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const PORT = process.env.PORT || 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-// Função para carregar e executar handlers da API
-async function loadApiHandler(filepath: string) {
-  try {
-    const module = await import(filepath);
-    return module.default || module;
-  } catch (error) {
-    console.error(`Erro ao carregar handler: ${filepath}`, error);
-    return null;
-  }
+// Import handlers directly from TS source
+import healthHandler from './api/health.ts';
+import loginHandler from './api/auth/login.ts';
+
+function decorateRes(res: any) {
+  res.status = (code: number) => ({
+    json: (obj: any) => {
+      try { res.setHeader('Content-Type', 'application/json'); } catch {}
+      res.statusCode = code;
+      res.end(JSON.stringify(obj));
+    },
+  });
+  res.json = (obj: any) => {
+    try { res.setHeader('Content-Type', 'application/json'); } catch {}
+    res.end(JSON.stringify(obj));
+  };
+  return res;
 }
 
-// Servidor de desenvolvimento simples
-const server = createServer(async (req, res) => {
-  const url = new URL(req.url || '/', `http://localhost:${PORT}`);
-  
-  // Configurar CORS para desenvolvimento
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    res.writeHead(200);
-    res.end();
-    return;
-  }
+const server = http.createServer(async (req: any, res: any) => {
+  decorateRes(res);
+  const parsed = url.parse(req.url || '/', true);
+  const path = parsed.pathname || '/';
 
-  // Mapear rotas da API
-  const pathname = url.pathname;
-  
-  if (pathname.startsWith('/api/')) {
-    const apiPath = pathname.slice(4); // Remove '/api' prefix
-    const handlerPath = join(__dirname, 'api', `${apiPath}.ts`);
-    
-    try {
-      const handler = await loadApiHandler(handlerPath);
-      if (handler && typeof handler === 'function') {
-        await handler(req, res);
-        return;
-      }
-    } catch (error) {
-      console.error(`Erro ao executar handler para ${pathname}:`, error);
+  try {
+    if (path === '/health') {
+      await healthHandler(req, res);
+      return;
     }
+    if (path === '/auth/login') {
+      await loginHandler(req, res);
+      return;
+    }
+    res.status(404).json({ error: 'Not Found' });
+  } catch (e: any) {
+    console.error('Handler error:', e);
+    res.status(500).json({ error: 'Internal Server Error', message: String(e?.message || e) });
   }
-  
-  // Resposta padrão para rotas não encontradas
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'Rota não encontrada' }));
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Servidor de desenvolvimento rodando em http://localhost:${PORT}`);
-  console.log(`📁 Servindo APIs da pasta: ${join(__dirname, 'api')}`);
+const port = process.env.PORT ? Number(process.env.PORT) : 3006;
+server.listen(port, () => {
+  console.log(`Local API listening on http://localhost:${port}`);
+  console.log('Endpoints: GET /health, POST /auth/login');
 });
-
-export default server;
