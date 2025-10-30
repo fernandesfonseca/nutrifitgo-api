@@ -19,7 +19,6 @@
     "typescript": "^5.6.3"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
     "type-check": "tsc -p tsconfig.json --noEmit",
     "dev": "tsx dev-server.ts"
   }
