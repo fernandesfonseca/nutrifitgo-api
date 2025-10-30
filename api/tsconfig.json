@@ -5,12 +5,15 @@
     "moduleResolution": "Bundler",
     "outDir": "dist",
     "lib": ["ES2022", "DOM"],
+    "types": ["node"],
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "noImplicitAny": false
   },
-  "include": ["api/**/*.ts"]
+  "include": ["api/**/*.ts", "dev-server.ts"]
 }
