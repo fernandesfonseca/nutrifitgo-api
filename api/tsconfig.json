@@ -15,5 +15,5 @@
     "isolatedModules": true,
     "noImplicitAny": false
   },
-  "include": ["api/**/*.ts", "dev-server.ts"]
+  "include": ["**/*.ts"]
 }
