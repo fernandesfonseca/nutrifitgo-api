@@ -52,11 +52,11 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   const tryFiles: string[] = [];
   if (pathname.startsWith('/api/')) {
     const apiPath = pathname.slice(5); // remove '/api/'
-    tryFiles.push(join(__dirname, `${apiPath}.ts`));
+    tryFiles.push(join(__dirname, 'api', `${apiPath}.ts`));
   } else {
     // direct mapping without /api prefix
     const direct = pathname.slice(1) || 'index';
-    tryFiles.push(join(__dirname, `${direct}.ts`));
+    tryFiles.push(join(__dirname, 'api', `${direct}.ts`));
   }
 
   for (const handlerPath of tryFiles) {
